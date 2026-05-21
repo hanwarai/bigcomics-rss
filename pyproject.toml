@@ -21,7 +21,7 @@ dev = [
     "pytest>=8.0.0",
     "requests-mock>=1.12.1",
     "mypy>=2.1.0",
-    "types-requests>=2.33.0.20260513",
+    "types-requests>=2.33.0.20260518",
 ]
 
 [tool.pytest.ini_options]
