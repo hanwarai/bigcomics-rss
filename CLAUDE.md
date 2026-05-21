@@ -34,7 +34,7 @@ Python は `pyproject.toml` で `>=3.13` を要求し、`.python-version` も `3
 4. BeautifulSoup で HTML をパース:
    - シリーズタイトル: `h1` 配下のテキスト（`span.g-hidden` 接頭辞を除外）
    - カバー画像: `img.series-cover-image` の `src`
-   - エピソード: `a.series-eplist-item-link` を走査し、内部に `div.series-eplist-item-access-paid`（コインアイコン付き有料マーカー）を **持たない** ものだけ採用
+   - エピソード: `a.series-eplist-item-link` を走査し、有料マーカー `div.series-eplist-item-access-paid`（コインアイコン）と「待つと無料」マーカー `[data-e2e="eliWfIcon"]`（待機アイコン）の **どちらも持たない** ものだけ採用（＝完全無料のみ）
    - エピソードタイトル: `span.series-eplist-item-h-text` のテキスト
    - エピソード公開日: `div.series-eplist-item-meta-date` の `YYYY/MM/DD` を JST 00:00 として解釈
 5. `feedgenerator.Atom1Feed` で Atom フィードを生成 → `feeds/{series_hash}.xml`
@@ -52,8 +52,16 @@ Python は `pyproject.toml` で `>=3.13` を要求し、`.python-version` も `3
 
 ### 「無料」判定ロジック
 
-bigcomics の各エピソード `<a>` には access 表示エリアがあり、有料エピソードのみ `<div class="series-eplist-item-access-paid">` 内にコインアイコンを持つ。
-**判定**: `series-eplist-item-access-paid` を持たないエピソード = 無料（「待つと無料」を含む）。
+bigcomics の各エピソード `<a>` の access 表示エリアは 3 種類:
+
+| 種別 | マーカー | 採用 |
+|---|---|---|
+| 有料 | `div.series-eplist-item-access-paid`（コイン, `data-e2e="eliCoinIcon"`） | ✗ 除外 |
+| 待つと無料 | `svg.series-eplist-item-access-icon`（`data-e2e="eliWfIcon"`） | ✗ 除外 |
+| 完全無料 | `span.series-eplist-item-access-text.mode-free`（`data-e2e="eliFreeBadge"`, テキスト「無料」） | ✓ 採用 |
+
+**判定**: 有料マーカー（`series-eplist-item-access-paid`）と「待つと無料」マーカー（`data-e2e="eliWfIcon"`）の **どちらも持たない** エピソード = 完全無料として採用。
+「待つと無料」は今すぐ読めないため除外する（過去はこれを無料扱いに含めていたが、現在は除外）。
 yanmaga の「無料タグの存在」と逆向きの判定（負条件）になっている点に注意。
 
 ### シリーズの追加方法

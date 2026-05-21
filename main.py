@@ -73,9 +73,13 @@ def extract_cover_image(soup: BeautifulSoup) -> str | None:
 
 
 def parse_episode(anchor: Tag) -> dict[str, object] | None:
-    """1 エピソードの `<a>` から dict を組み立てる。有料 / パース不能なら None。"""
+    """1 エピソードの `<a>` から dict を組み立てる。有料 / 待つと無料 / パース不能なら None。"""
     # 有料マーカー（コインアイコン）があれば除外
     if anchor.find("div", class_="series-eplist-item-access-paid") is not None:
+        return None
+    # 「待つと無料」マーカー（待機アイコン eliWfIcon）があれば除外。
+    # 今すぐ無料ではないため、完全無料（eliFreeBadge / mode-free）のみ採用する
+    if anchor.find(attrs={"data-e2e": "eliWfIcon"}) is not None:
         return None
 
     href = anchor.get("href")

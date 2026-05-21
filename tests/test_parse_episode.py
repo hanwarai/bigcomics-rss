@@ -12,6 +12,7 @@ def _anchor(
     title: str = "第138杯",
     date_text: str = "2026/05/08",
     paid: bool = False,
+    waitfree: bool = False,
 ) -> Tag:
     paid_html = (
         '<div class="series-eplist-item-access-paid">'
@@ -19,11 +20,17 @@ def _anchor(
         if paid
         else ""
     )
+    waitfree_html = (
+        '<svg class="series-eplist-item-access-icon" data-e2e="eliWfIcon"></svg>'
+        if waitfree
+        else ""
+    )
     html = (
         f'<a class="series-eplist-item-link" href="{href}">'
         f'<span class="series-eplist-item-h-text">{title}</span>'
         f'<div class="series-eplist-item-meta-date">{date_text}</div>'
         f"{paid_html}"
+        f"{waitfree_html}"
         "</a>"
     )
     soup = BeautifulSoup(html, "html.parser")
@@ -34,6 +41,11 @@ def _anchor(
 
 def test_returns_none_when_paid() -> None:
     assert main.parse_episode(_anchor(paid=True)) is None
+
+
+def test_returns_none_when_waitfree() -> None:
+    """「待つと無料」（eliWfIcon）は今すぐ無料ではないので除外。"""
+    assert main.parse_episode(_anchor(waitfree=True)) is None
 
 
 def test_returns_none_when_href_invalid() -> None:

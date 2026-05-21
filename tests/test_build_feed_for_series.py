@@ -27,11 +27,18 @@ def _series_html(
             if paid
             else ""
         )
+        waitfree = ep.get("waitfree")
+        waitfree_html = (
+            '<svg class="series-eplist-item-access-icon" data-e2e="eliWfIcon"></svg>'
+            if waitfree
+            else ""
+        )
         episode_blocks.append(
             f'<a class="series-eplist-item-link" href="/episodes/{ep["hash"]}">'
             f'<span class="series-eplist-item-h-text">{ep["title"]}</span>'
             f'<div class="series-eplist-item-meta-date">{ep["date"]}</div>'
             f"{paid_html}"
+            f"{waitfree_html}"
             "</a>"
         )
     episodes_html = "".join(episode_blocks)
@@ -74,6 +81,30 @@ def test_filters_paid_episodes(
     assert "https://bigcomics.jp/episodes/aaa111" in xml
 
 
+def test_filters_waitfree_episodes(
+    requests_mock: rm_module.Mocker, feeds_dir: Path
+) -> None:
+    """「待つと無料」エピソードは無料扱いせず除外する。"""
+    html = _series_html(
+        title="らーめん再遊記",
+        episodes=[
+            {"hash": "aaa111", "title": "第1杯", "date": "2024/01/01"},
+            {"hash": "ddd444", "title": "第4杯", "date": "2024/02/15", "waitfree": "y"},
+            {"hash": "ccc333", "title": "第3杯", "date": "2024/02/01"},
+        ],
+    )
+    requests_mock.get(SERIES_URL, text=html)
+
+    result = main.build_feed_for_series(main.create_session(), SERIES_HASH)
+    assert result == {"id": SERIES_HASH, "title": "らーめん再遊記"}
+
+    xml = (feeds_dir / f"{SERIES_HASH}.xml").read_text(encoding="utf-8")
+    assert "aaa111" in xml
+    assert "ccc333" in xml
+    assert "ddd444" not in xml
+    assert "第4杯" not in xml
+
+
 def test_strips_g_hidden_prefix_from_title(
     requests_mock: rm_module.Mocker, feeds_dir: Path
 ) -> None:
@@ -113,6 +144,11 @@ def test_real_fixture_yields_free_episodes(
     assert "らーめん再遊記" in result["title"]
 
     xml = (feeds_dir / f"{SERIES_HASH}.xml").read_text(encoding="utf-8")
-    # 少なくとも 1 エピソードは生成される（無料エピソードの存在は時期依存だが
-    # スナップショット時点の保証）
-    assert "<entry>" in xml or "https://bigcomics.jp/episodes/" in xml
+    # 完全無料エピソードは含まれる
+    assert "751ae35fb0c01" in xml  # 第1杯（無料）
+    assert "652d6adda76f0" in xml  # 第136杯（無料）
+    # 「待つと無料」エピソードは除外される
+    assert "f04c6bf4a5181" not in xml  # 第5杯（待つと無料）
+    assert "5a989dbb3b12d" not in xml  # 第4杯（待つと無料）
+    # 有料エピソードは除外される
+    assert "b23af2d27a7f6" not in xml  # 第138杯（有料）
