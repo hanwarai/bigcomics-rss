@@ -79,7 +79,7 @@ def parse_episode(anchor: Tag) -> dict[str, object] | None:
         return None
     # 「待つと無料」マーカー（待機アイコン eliWfIcon）があれば除外。
     # 今すぐ無料ではないため、完全無料（eliFreeBadge / mode-free）のみ採用する
-    if anchor.find(attrs={"data-e2e": "eliWfIcon"}) is not None:
+    if anchor.find(None, attrs={"data-e2e": "eliWfIcon"}) is not None:
         return None
 
     href = anchor.get("href")
