@@ -18,7 +18,7 @@ ci = ["uv==0.11.21"]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=9.1.0",
+    "pytest>=9.1.1",
     "requests-mock>=1.12.1",
     "mypy>=2.1.0",
     "types-requests>=2.33.0.20260518",
