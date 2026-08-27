@@ -76,9 +76,15 @@ yanmaga の「無料タグの存在」と逆向きの判定（負条件）にな
 
 ### CI/CD
 
-GitHub Actions (`.github/workflows/gh-pages.yaml`) が以下のタイミングで自動実行:
+ワークフローは 2 本。
+
+**`.github/workflows/gh-pages.yaml`**（デプロイ）が以下のタイミングで自動実行:
 - `main` ブランチへの push
 - 12 時間ごと（cron）
 - `workflow_dispatch`
 
-build ジョブで `mypy` → `pytest` → `main.py` を実行し、`feeds/` を GitHub Pages にデプロイ。schedule 実行が失敗した場合は `ci-failure` ラベル付き Issue を自動作成・追記する。
+build ジョブで `mypy` → `pytest` → `main.py` を実行し、`feeds/` を GitHub Pages にデプロイ。schedule 実行が失敗した場合は `ci-failure` ラベル付き Issue を自動作成・追記する（push 起因の失敗は Issue 化されない点に注意）。
+
+**`.github/workflows/ci.yaml`**（PR チェック）は `main` を base とする `pull_request` で実行。`uv lock --check` → `uv sync --frozen --all-extras` → `mypy` → `pytest` のみを走らせる軽量ジョブで、`main.py` の実行（bigcomics.jp への実アクセス）と Pages デプロイは含まない。Dependabot PR もこれで検証される。
+
+`uv sync --frozen` は `uv.lock` と `pyproject.toml` の整合性を検証しないため、`uv lock --check` を独立したステップとして持たせている。両ワークフローとも uv 本体のバージョンは `pyproject.toml` の `[dependency-groups] ci` ピンから読み取って `setup-uv` に渡す。
