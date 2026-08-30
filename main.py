@@ -1,4 +1,4 @@
-"""ビッコミ（bigcomics.jp）の無料エピソードを Atom フィードとして生成する。"""
+"""ビッコミ(bigcomics.jp)の無料エピソードを Atom フィードとして生成する。"""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import csv
 import logging
 import re
 from collections.abc import Iterator
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import feedgenerator
@@ -72,13 +72,15 @@ def extract_cover_image(soup: BeautifulSoup) -> str | None:
     return None
 
 
-def parse_episode(anchor: Tag) -> dict[str, object] | None:
+# 除外理由ごとに早期 return するガード節スタイル。1 本にまとめると条件が入れ子になって
+# 読みにくくなるため、return が多いことは許容する。
+def parse_episode(anchor: Tag) -> dict[str, object] | None:  # noqa: PLR0911
     """1 エピソードの `<a>` から dict を組み立てる。有料 / 待つと無料 / パース不能なら None。"""
-    # 有料マーカー（コインアイコン）があれば除外
+    # 有料マーカー(コインアイコン)があれば除外
     if anchor.find("div", class_="series-eplist-item-access-paid") is not None:
         return None
-    # 「待つと無料」マーカー（待機アイコン eliWfIcon）があれば除外。
-    # 今すぐ無料ではないため、完全無料（eliFreeBadge / mode-free）のみ採用する
+    # 「待つと無料」マーカー(待機アイコン eliWfIcon)があれば除外。
+    # 今すぐ無料ではないため、完全無料(eliFreeBadge / mode-free)のみ採用する
     if anchor.find(None, attrs={"data-e2e": "eliWfIcon"}) is not None:
         return None
 
@@ -114,17 +116,13 @@ def parse_episode(anchor: Tag) -> dict[str, object] | None:
     }
 
 
-def build_feed_for_series(
-    session: requests.Session, series_hash: str
-) -> dict[str, str] | None:
+def build_feed_for_series(session: requests.Session, series_hash: str) -> dict[str, str] | None:
     series_url = SERIES_URL_TEMPLATE.format(series_hash=series_hash)
     logger.info("%s %s", series_hash, series_url)
 
     response = session.get(series_url, timeout=REQUEST_TIMEOUT)
     if not response.ok:
-        logger.warning(
-            "failed to retrieve %s (status=%s)", series_hash, response.status_code
-        )
+        logger.warning("failed to retrieve %s (status=%s)", series_hash, response.status_code)
         return None
 
     soup = BeautifulSoup(response.text, "html.parser")
@@ -192,15 +190,11 @@ def render_index(feeds: list[dict[str, str]]) -> None:
     env = Environment(loader=FileSystemLoader(str(TEMPLATE_DIR)), autoescape=True)
     template = env.get_template("index.html")
     FEEDS_DIR.mkdir(exist_ok=True)
-    (FEEDS_DIR / "index.html").write_text(
-        template.render(feeds=feeds), encoding="utf-8"
-    )
+    (FEEDS_DIR / "index.html").write_text(template.render(feeds=feeds), encoding="utf-8")
 
 
 def main() -> None:
-    logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s"
-    )
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     session = create_session()
     rendered: list[dict[str, str]] = []
     for series_hash in read_feed_ids(FEED_LIST_PATH):

@@ -44,7 +44,7 @@ def test_returns_none_when_paid() -> None:
 
 
 def test_returns_none_when_waitfree() -> None:
-    """「待つと無料」（eliWfIcon）は今すぐ無料ではないので除外。"""
+    """「待つと無料」(eliWfIcon)は今すぐ無料ではないので除外。"""
     assert main.parse_episode(_anchor(waitfree=True)) is None
 
 
@@ -74,6 +74,4 @@ def test_parses_free_episode() -> None:
     assert parsed["unique_id"] == "b23af2d27a7f6"
     assert parsed["title"] == "第138杯"
     assert parsed["link"] == "https://bigcomics.jp/episodes/b23af2d27a7f6"
-    assert parsed["pubdate"] == datetime(
-        2026, 5, 8, tzinfo=timezone(timedelta(hours=9))
-    )
+    assert parsed["pubdate"] == datetime(2026, 5, 8, tzinfo=timezone(timedelta(hours=9)))
