@@ -23,9 +23,7 @@ def test_skips_empty_lines_and_whitespace(tmp_path: Path) -> None:
     assert list(main.read_feed_ids(path)) == ["5611422227f8d", "d65521c8caf23"]
 
 
-def test_skips_invalid_hashes(
-    tmp_path: Path, caplog: pytest.LogCaptureFixture
-) -> None:
+def test_skips_invalid_hashes(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
     path = _write(
         tmp_path,
         "5611422227f8d\n../etc/passwd\nfoo\nABCDEF1234567\nd65521c8caf23\n",
@@ -38,18 +36,14 @@ def test_skips_invalid_hashes(
     assert any("invalid series hash" in rec.message for rec in caplog.records)
 
 
-def test_rejects_wrong_length_hash(
-    tmp_path: Path, caplog: pytest.LogCaptureFixture
-) -> None:
+def test_rejects_wrong_length_hash(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
     # 12 桁・14 桁はいずれも不正
     path = _write(tmp_path, "5611422227f8\n5611422227f8de\n")
     with caplog.at_level("WARNING", logger="bigcomics-rss"):
         assert list(main.read_feed_ids(path)) == []
 
 
-def test_deduplicates_repeated_hashes(
-    tmp_path: Path, caplog: pytest.LogCaptureFixture
-) -> None:
+def test_deduplicates_repeated_hashes(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
     path = _write(
         tmp_path,
         "5611422227f8d\nd65521c8caf23\n5611422227f8d\nd65521c8caf23\nb14d95232f3a4\n",
